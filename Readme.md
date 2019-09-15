@@ -1,7 +1,7 @@
 # Личный проект «Кексобукинг» [![Build status][travis-image]][travis-url]
 
 * Студент: [Tim Chumbash](https://up.htmlacademy.ru/javascript/18/user/288063).
-* Наставник: `Неизвестно`.
+* Наставник: `Виталий Яковенко`.
 
 ---
 
