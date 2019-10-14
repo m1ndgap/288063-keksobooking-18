@@ -1,3 +1,5 @@
+'use strict';
+
 // declaring constants
 var LOCATIONRANGEX = [50, 1150];
 var LOCATIONRANGEY = [130, 640];
