@@ -91,6 +91,7 @@ window.generateRealEstate = function () {
  * generating pins for each object
  * @param {object} realEstate object
  * @param {element} template for realEstate object pin
+ * @return {element} fragment containing collection of pins to put on the map
  */
 window.generateRealEstateDom = function (realEstate, template) {
   var fragment = document.createDocumentFragment();
@@ -185,7 +186,6 @@ window.generateCardDom = function (realEstate, template) {
 };
 
 // calling functions
-
 var realEstate = window.generateRealEstate();
 var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
 var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
@@ -193,7 +193,6 @@ var mapPins = document.querySelector('.map__pins');
 var map = document.querySelector('.map');
 var mapFilters = document.querySelector('.map__filters-container');
 var mapPinContent = window.generateRealEstateDom(realEstate, pinTemplt);
-console.log(mapPinContent);
 mapPins.appendChild(mapPinContent);
 map.insertBefore(window.generateCardDom(realEstate, cardTemplt), mapFilters);
 
