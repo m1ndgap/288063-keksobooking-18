@@ -111,24 +111,18 @@ window.generateRealEstateDom = function (realEstate, template) {
  * @return {string} transType - proper string that would be returned to dom
  */
 var idREType = function (type) {
-  var transType = '';
   switch (type) {
     case 'flat':
-      transType = 'Квартира';
-      break;
+      return 'Квартира';
     case 'bungalo':
-      transType = 'Бунгало';
-      break;
+      return 'Бунгало';
     case 'house':
-      transType = 'Дом';
-      break;
+      return 'Дом';
     case 'palace':
-      transType = 'Дворец';
-      break;
+      return 'Дворец';
     default:
-      transType = 'Не указано';
+      return 'Не указано';
   }
-  return transType;
 };
 
 /**
