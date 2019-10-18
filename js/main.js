@@ -87,24 +87,115 @@ window.generateRealEstate = function () {
   return realEstate;
 };
 
+/**
+ * generating pins for each object
+ * @param {object} realEstate object
+ * @param {element} template for realEstate object pin
+ * @return {element} fragment containing collection of pins to put on the map
+ */
 window.generateRealEstateDom = function (realEstate, template) {
+  var fragment = document.createDocumentFragment();
   for (var x = 0; x < realEstate.length; x++) {
-    var element = template.content.querySelector('.map__pin').cloneNode(true);
+    var element = template.cloneNode(true);
     var realEstateObj = realEstate[x];
     element.setAttribute('style', 'left:' + realEstateObj.location.x + 'px; top:' + realEstateObj.location.y + 'px;');
     element.querySelector('img').setAttribute('src', realEstateObj.author.avatar);
     element.querySelector('img').setAttribute('alt', realEstateObj.offer.title);
     fragment.appendChild(element);
   }
+  return fragment;
+};
+
+/**
+ * assigning proper text values to each type of real estate
+ * @param {string} type of realEstate object
+ * @return {string} transType - proper string that would be returned to dom
+ */
+var idREType = function (type) {
+  switch (type) {
+    case 'flat':
+      return 'Квартира';
+    case 'bungalo':
+      return 'Бунгало';
+    case 'house':
+      return 'Дом';
+    case 'palace':
+      return 'Дворец';
+    default:
+      return 'Не указано';
+  }
+};
+
+/**
+ * generating HTML for real estate features
+ * @param {array} array of real estate features from the object
+ * @return {element} fragment filled with generated 'feature' elements
+ */
+var idREFeatures = function (array) {
+  var fragment = document.createDocumentFragment();
+  for (var i = 0; i < array.length; i++) {
+    var li = document.createElement('li');
+    li.classList.add('popup__feature', 'popup__feature--' + array[i]);
+    fragment.appendChild(li);
+  }
+  return fragment;
+};
+
+/**
+ * generating HTML for real estate features
+ * @param {array} array of real estate features from the object
+ * @param {element} imgEl image container element from the template
+ * @return {element} fragment filled with generated 'photo' elements
+ */
+var idREImages = function (array, imgEl) {
+  var fragment = document.createDocumentFragment();
+  // carried over img element so I dont have to generate it from scratch with all the attributes and all. this way it is more flexible.
+  for (var i = 0; i < array.length; i++) {
+    var img = imgEl.querySelector('img').cloneNode();
+    img.setAttribute('src', array[i]);
+    fragment.appendChild(img);
+  }
+  return fragment;
+};
+
+window.generateCardDom = function (realEstate, template) {
+  var element = template.cloneNode(true);
+  var realEstateObj = realEstate[0];
+  var type = realEstateObj.offer.type;
+  element.querySelector('.popup__title').innerText = realEstateObj.offer.title;
+  element.querySelector('.popup__text--address').innerText = realEstateObj.offer.address;
+  element.querySelector('.popup__text--price').innerText = realEstateObj.offer.price + '₽/ночь';
+  element.querySelector('.popup__type').innerText = idREType(type);
+  element.querySelector('.popup__text--capacity').innerText = realEstateObj.offer.rooms + ' комнаты для ' + realEstateObj.offer.guests + ' гостей';
+  element.querySelector('.popup__text--time').innerText = 'Заезд после ' + realEstateObj.offer.checkin + ', выезд до ' + realEstateObj.offer.checkout;
+  element.querySelector('.popup__description').innerText = realEstateObj.offer.description;
+  element.querySelector('.popup__avatar').setAttribute('src', realEstateObj.author.avatar);
+  // generating features elements in a separate function
+  var features = idREFeatures(realEstateObj.offer.features);
+  var featuresEl = element.querySelector('.popup__features');
+  // cleaning out template values
+  featuresEl.innerHTML = '';
+  featuresEl.appendChild(features);
+  // generating img elements in a separate function
+  var photosEl = element.querySelector('.popup__photos');
+  var photos = idREImages(realEstateObj.offer.photos, photosEl);
+  // cleaning out template values
+  photosEl.innerHTML = '';
+  photosEl.appendChild(photos);
+  return element;
 };
 
 // calling functions
-var fragment = document.createDocumentFragment();
-var templt = document.querySelector('#pin');
+var realEstate = window.generateRealEstate();
+var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
+var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
 var mapPins = document.querySelector('.map__pins');
-window.generateRealEstateDom(window.generateRealEstate(), templt);
-mapPins.appendChild(fragment);
+var map = document.querySelector('.map');
+var mapFilters = document.querySelector('.map__filters-container');
+var mapPinContent = window.generateRealEstateDom(realEstate, pinTemplt);
+mapPins.appendChild(mapPinContent);
+map.insertBefore(window.generateCardDom(realEstate, cardTemplt), mapFilters);
+
 
 // DOM manipulation
-var map = document.querySelector('.map');
 map.classList.remove('map--faded');
