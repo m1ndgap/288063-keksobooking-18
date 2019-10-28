@@ -21,8 +21,65 @@ var REPHOTOS = [
   'http://o0.github.io/assets/images/tokyo/hotel2.jpg',
   'http://o0.github.io/assets/images/tokyo/hotel3.jpg'
 ];
+var ENTERKEY = 13;
+var PINHEIGHT = 100;
+
+var pageActive = false;
+
 
 // declaring functions
+
+/**
+ * disable all form inputs
+ * @param {element} form - target for disabling
+ */
+var disableForm = function (form) {
+  var fieldsets = form.querySelectorAll('fieldset');
+  for (var i = 0; i < fieldsets.length; i++) {
+    var fieldset = fieldsets[i];
+    fieldset.disabled = true;
+  }
+};
+
+/**
+ * enable all form inputs
+ * @param {element} form - target for disabling
+ * @param {string} cls - css class disabling the form
+ */
+var enableForm = function (form, cls) {
+  form.classList.remove(cls);
+  var fieldsets = form.querySelectorAll('fieldset');
+  for (var i = 0; i < fieldsets.length; i++) {
+    var fieldset = fieldsets[i];
+    fieldset.disabled = false;
+  }
+};
+
+/**
+ * toggling active state of the page with global var
+ */
+var togglePageActive = function () {
+  if (pageActive) {
+    pageActive = false;
+  } else {
+    pageActive = true;
+  }
+};
+
+/**
+ * fillin address input field based on our pin location and active/inactive state.
+ * @param {element} pin used to determine coordinates to display
+ */
+var fillAddress = function (pin) {
+  var addressField = document.querySelector('.ad-form #address');
+  var addressX = pin.style.left.slice(0, -2);
+  var addressY = pin.style.top.slice(0, -2);
+  if (pageActive) {
+    addressY = parseInt(addressY, 10) + PINHEIGHT / 2;
+  }
+  addressField.setAttribute('value', addressX + ', ' + addressY);
+};
+
 /**
 * generating random number
 * @param {int} min value
@@ -185,17 +242,61 @@ window.generateCardDom = function (realEstate, template) {
   return element;
 };
 
-// calling functions
-var realEstate = window.generateRealEstate();
-var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
-var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
-var mapPins = document.querySelector('.map__pins');
+//    calling functions
+// disabling the form
+var mainForm = document.querySelector('.ad-form');
+var mainPin = document.querySelector('.map__pin--main');
+disableForm(mainForm);
+fillAddress(mainPin);
+
+// assigning event listeners
 var map = document.querySelector('.map');
-var mapFilters = document.querySelector('.map__filters-container');
-var mapPinContent = window.generateRealEstateDom(realEstate, pinTemplt);
-mapPins.appendChild(mapPinContent);
-map.insertBefore(window.generateCardDom(realEstate, cardTemplt), mapFilters);
+var disCls = 'ad-form--disabled';
+mainPin.addEventListener('mousedown', function () {
+  togglePageActive();
+  enableForm(mainForm, disCls);
+  map.classList.remove('map--faded');
+});
+mainPin.addEventListener('mouseup', function () {
+  fillAddress(mainPin);
+});
+mainPin.addEventListener('keydown', function (evt) {
+  if (evt.keyCode === ENTERKEY) {
+    togglePageActive();
+    enableForm(mainForm, disCls);
+    map.classList.remove('map--faded');
+    fillAddress(mainPin);
+  }
+});
+
+var formSubmit = document.querySelector('.ad-form__submit');
+formSubmit.addEventListener('click', function (evt) {
+  evt.preventDefault();
+  var guests = document.getElementById('capacity');
+  var guestsNumber = guests.querySelector('option:checked').value;
+  var rooms = document.getElementById('room_number');
+  var roomsNumber = rooms.querySelector('option:checked').value;
+  if (guestsNumber > roomsNumber) {
+    guests.setCustomValidity('Слишком много гостей');
+  } else {
+    guests.setCustomValidity('');
+  }
+  guests.reportValidity();
+});
+
+
+// generating real estate data
+// var realEstate = window.generateRealEstate();
+
+// creating and inserting pins
+// var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
+// var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
+// var mapPins = document.querySelector('.map__pins');
+// var mapFilters = document.querySelector('.map__filters-container');
+// var mapPinContent = window.generateRealEstateDom(realEstate, pinTemplt);
+// mapPins.appendChild(mapPinContent);
+// map.insertBefore(window.generateCardDom(realEstate, cardTemplt), mapFilters);
 
 
 // DOM manipulation
-map.classList.remove('map--faded');
+
