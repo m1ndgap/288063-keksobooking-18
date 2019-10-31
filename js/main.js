@@ -22,18 +22,47 @@ var REPHOTOS = [
   'http://o0.github.io/assets/images/tokyo/hotel3.jpg'
 ];
 var ENTERKEY = 13;
-var PINHEIGHT = 100;
-
-var pageActive = false;
+// var PINHEIGHT = 70;
+var FORMOFFCLASS = 'ad-form--disabled';
+var MAPOFFCLASS = 'map--faded';
+var PINCLASS = 'map__pin';
+var MAINPINCLASS = 'map__pin--main';
+var POPUPCLASS = 'map__card';
 
 
 // declaring functions
+/**
+ * checking if map is already populated
+ * @param {element} map containing elements
+ * @return {boolean} true if map has no address pins (main pin is ignored)
+ */
+var checkPins = function (map) {
+  var pins = map.querySelectorAll('.' + PINCLASS).length;
+  return !(pins > 1);
+};
+
+var destroyMapElements = function (map) {
+  var pins = map.querySelectorAll('.' + PINCLASS);
+  var popup = map.querySelector('.' + POPUPCLASS);
+  popup.remove();
+  for (var i = 0; i < pins.length; i++) {
+    var pin = pins[i];
+    if (!(pin.classList.contains(MAINPINCLASS))) {
+      pin.remove();
+    }
+  }
+};
 
 /**
  * disable all form inputs
  * @param {element} form - target for disabling
+ * @param {string} cls - css class disabling the form
+ * @param {element} map - map element to enable
+ * @param {string} mapCls - css class disabling the form
  */
-var disableForm = function (form) {
+var disablePage = function (form, cls, map, mapCls) {
+  form.classList.add(cls);
+  map.classList.add(mapCls);
   var fieldsets = form.querySelectorAll('fieldset');
   for (var i = 0; i < fieldsets.length; i++) {
     var fieldset = fieldsets[i];
@@ -42,12 +71,15 @@ var disableForm = function (form) {
 };
 
 /**
- * enable all form inputs
+ * enable the form and map
  * @param {element} form - target for disabling
  * @param {string} cls - css class disabling the form
+ * @param {element} map - map element to enable
+ * @param {string} mapCls - css class disabling the form
  */
-var enableForm = function (form, cls) {
+var enablePage = function (form, cls, map, mapCls) {
   form.classList.remove(cls);
+  map.classList.remove(mapCls);
   var fieldsets = form.querySelectorAll('fieldset');
   for (var i = 0; i < fieldsets.length; i++) {
     var fieldset = fieldsets[i];
@@ -55,16 +87,6 @@ var enableForm = function (form, cls) {
   }
 };
 
-/**
- * toggling active state of the page with global var
- */
-var togglePageActive = function () {
-  if (pageActive) {
-    pageActive = false;
-  } else {
-    pageActive = true;
-  }
-};
 
 /**
  * fillin address input field based on our pin location and active/inactive state.
@@ -74,9 +96,6 @@ var fillAddress = function (pin) {
   var addressField = document.querySelector('.ad-form #address');
   var addressX = pin.style.left.slice(0, -2);
   var addressY = pin.style.top.slice(0, -2);
-  if (pageActive) {
-    addressY = parseInt(addressY, 10) + PINHEIGHT / 2;
-  }
   addressField.setAttribute('value', addressX + ', ' + addressY);
 };
 
@@ -246,57 +265,54 @@ window.generateCardDom = function (realEstate, template) {
 // disabling the form
 var mainForm = document.querySelector('.ad-form');
 var mainPin = document.querySelector('.map__pin--main');
-disableForm(mainForm);
+var map = document.querySelector('.map');
+var realEstate = window.generateRealEstate();
+var resetEl = document.querySelector('.ad-form__reset');
+disablePage(mainForm, FORMOFFCLASS, map, MAPOFFCLASS);
 fillAddress(mainPin);
+checkPins(map);
+
 
 // assigning event listeners
-var map = document.querySelector('.map');
-var disCls = 'ad-form--disabled';
 mainPin.addEventListener('mousedown', function () {
-  togglePageActive();
-  enableForm(mainForm, disCls);
-  map.classList.remove('map--faded');
+  enablePage(mainForm, FORMOFFCLASS, map, MAPOFFCLASS);
+  if (checkPins(map)) {
+    var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
+    var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
+    var mapPins = document.querySelector('.map__pins');
+    var mapFilters = document.querySelector('.map__filters-container');
+    var mapPinContent = window.generateRealEstateDom(realEstate, pinTemplt);
+    mapPins.appendChild(mapPinContent);
+    map.insertBefore(window.generateCardDom(realEstate, cardTemplt), mapFilters);
+  }
 });
 mainPin.addEventListener('mouseup', function () {
   fillAddress(mainPin);
 });
 mainPin.addEventListener('keydown', function (evt) {
   if (evt.keyCode === ENTERKEY) {
-    togglePageActive();
-    enableForm(mainForm, disCls);
+    enablePage(mainForm, FORMOFFCLASS, map, MAPOFFCLASS);
     map.classList.remove('map--faded');
     fillAddress(mainPin);
   }
 });
-
-var formSubmit = document.querySelector('.ad-form__submit');
-formSubmit.addEventListener('click', function (evt) {
-  evt.preventDefault();
-  var guests = document.getElementById('capacity');
-  var guestsNumber = guests.querySelector('option:checked').value;
-  var rooms = document.getElementById('room_number');
-  var roomsNumber = rooms.querySelector('option:checked').value;
-  if (guestsNumber > roomsNumber) {
-    guests.setCustomValidity('Слишком много гостей');
-  } else {
-    guests.setCustomValidity('');
-  }
-  guests.reportValidity();
+resetEl.addEventListener('click', function () {
+  disablePage(mainForm, FORMOFFCLASS, map, MAPOFFCLASS);
+  destroyMapElements(map);
 });
 
 
-// generating real estate data
-// var realEstate = window.generateRealEstate();
-
-// creating and inserting pins
-// var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
-// var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
-// var mapPins = document.querySelector('.map__pins');
-// var mapFilters = document.querySelector('.map__filters-container');
-// var mapPinContent = window.generateRealEstateDom(realEstate, pinTemplt);
-// mapPins.appendChild(mapPinContent);
-// map.insertBefore(window.generateCardDom(realEstate, cardTemplt), mapFilters);
-
-
-// DOM manipulation
+mainForm.addEventListener('submit', function (evt) {
+  var guests = document.querySelector('#capacity');
+  var guestsNumber = guests.querySelector('option:checked').value;
+  var rooms = document.querySelector('#room_number');
+  var roomsNumber = rooms.querySelector('option:checked').value;
+  if (guestsNumber > roomsNumber) {
+    guests.setCustomValidity('Слишком много гостей');
+    evt.preventDefault();
+  } else {
+    guests.setCustomValidity('');
+  }
+  evt.target.checkValidity(); // returns false but im not sure what to do with it.
+});
 
