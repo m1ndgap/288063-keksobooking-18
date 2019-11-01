@@ -56,9 +56,7 @@ var destroyMapElements = function (map) {
 /**
  * disable all form inputs
  * @param {element} form - target for disabling
- * @param {string} cls - css class disabling the form
  * @param {element} map - map element to enable
- * @param {string} mapCls - css class disabling the form
  */
 var disablePage = function (form, map) {
   form.classList.add(FORMOFFCLASS);
@@ -73,9 +71,7 @@ var disablePage = function (form, map) {
 /**
  * enable the form and map
  * @param {element} form - target for disabling
- * @param {string} cls - css class disabling the form
  * @param {element} map - map element to enable
- * @param {string} mapCls - css class disabling the form
  */
 var enablePage = function (form, map) {
   form.classList.remove(FORMOFFCLASS);
@@ -311,7 +307,7 @@ resetEl.addEventListener('click', function () {
 });
 
 var guests = mainForm.querySelector('#capacity');
-guests.addEventListener('change', function (evt) {
+guests.addEventListener('change', function () {
   var guestsNumber = guests.querySelector('option:checked').value;
   var rooms = mainForm.querySelector('#room_number');
   var roomsNumber = rooms.querySelector('option:checked').value;
