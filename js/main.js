@@ -60,9 +60,9 @@ var destroyMapElements = function (map) {
  * @param {element} map - map element to enable
  * @param {string} mapCls - css class disabling the form
  */
-var disablePage = function (form, cls, map, mapCls) {
-  form.classList.add(cls);
-  map.classList.add(mapCls);
+var disablePage = function (form, map) {
+  form.classList.add(FORMOFFCLASS);
+  map.classList.add(MAPOFFCLASS);
   var fieldsets = form.querySelectorAll('fieldset');
   for (var i = 0; i < fieldsets.length; i++) {
     var fieldset = fieldsets[i];
@@ -77,9 +77,9 @@ var disablePage = function (form, cls, map, mapCls) {
  * @param {element} map - map element to enable
  * @param {string} mapCls - css class disabling the form
  */
-var enablePage = function (form, cls, map, mapCls) {
-  form.classList.remove(cls);
-  map.classList.remove(mapCls);
+var enablePage = function (form, map) {
+  form.classList.remove(FORMOFFCLASS);
+  map.classList.remove(MAPOFFCLASS);
   var fieldsets = form.querySelectorAll('fieldset');
   for (var i = 0; i < fieldsets.length; i++) {
     var fieldset = fieldsets[i];
@@ -130,7 +130,7 @@ var generateRandomArray = function (array) {
  * generating array of objects to populate DOM
  * @return {array} of real estate objects
  */
-window.generateRealEstate = function () {
+var generateRealEstate = function () {
   var realEstate = [];
   for (var i = 0; i < 8; i++) {
     var coordX = rng(LOCATIONRANGEX[0], LOCATIONRANGEX[1]);
@@ -169,7 +169,7 @@ window.generateRealEstate = function () {
  * @param {element} template for realEstate object pin
  * @return {element} fragment containing collection of pins to put on the map
  */
-window.generateRealEstateDom = function (realEstate, template) {
+var generateRealEstateDom = function (realEstate, template) {
   var fragment = document.createDocumentFragment();
   for (var x = 0; x < realEstate.length; x++) {
     var element = template.cloneNode(true);
@@ -234,7 +234,7 @@ var idREImages = function (array, imgEl) {
   return fragment;
 };
 
-window.generateCardDom = function (realEstate, template) {
+var generateCardDom = function (realEstate, template) {
   var element = template.cloneNode(true);
   var realEstateObj = realEstate[0];
   var type = realEstateObj.offer.type;
@@ -266,24 +266,24 @@ window.generateCardDom = function (realEstate, template) {
 var mainForm = document.querySelector('.ad-form');
 var mainPin = document.querySelector('.map__pin--main');
 var map = document.querySelector('.map');
-var realEstate = window.generateRealEstate();
 var resetEl = document.querySelector('.ad-form__reset');
-disablePage(mainForm, FORMOFFCLASS, map, MAPOFFCLASS);
+disablePage(mainForm, map);
 fillAddress(mainPin);
 checkPins(map);
 
 
 // assigning event listeners
 mainPin.addEventListener('mousedown', function () {
-  enablePage(mainForm, FORMOFFCLASS, map, MAPOFFCLASS);
+  enablePage(mainForm, map);
   if (checkPins(map)) {
     var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
     var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
     var mapPins = document.querySelector('.map__pins');
     var mapFilters = document.querySelector('.map__filters-container');
-    var mapPinContent = window.generateRealEstateDom(realEstate, pinTemplt);
+    var realEstate = generateRealEstate();
+    var mapPinContent = generateRealEstateDom(realEstate, pinTemplt);
     mapPins.appendChild(mapPinContent);
-    map.insertBefore(window.generateCardDom(realEstate, cardTemplt), mapFilters);
+    map.insertBefore(generateCardDom(realEstate, cardTemplt), mapFilters);
   }
 });
 mainPin.addEventListener('mouseup', function () {
@@ -291,28 +291,53 @@ mainPin.addEventListener('mouseup', function () {
 });
 mainPin.addEventListener('keydown', function (evt) {
   if (evt.keyCode === ENTERKEY) {
-    enablePage(mainForm, FORMOFFCLASS, map, MAPOFFCLASS);
-    map.classList.remove('map--faded');
+    enablePage(mainForm, map);
+    if (checkPins(map)) {
+      var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
+      var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
+      var mapPins = document.querySelector('.map__pins');
+      var mapFilters = document.querySelector('.map__filters-container');
+      var realEstate = generateRealEstate();
+      var mapPinContent = generateRealEstateDom(realEstate, pinTemplt);
+      mapPins.appendChild(mapPinContent);
+      map.insertBefore(generateCardDom(realEstate, cardTemplt), mapFilters);
+    }
     fillAddress(mainPin);
   }
 });
 resetEl.addEventListener('click', function () {
-  disablePage(mainForm, FORMOFFCLASS, map, MAPOFFCLASS);
+  disablePage(mainForm, map);
   destroyMapElements(map);
 });
 
-
-mainForm.addEventListener('submit', function (evt) {
-  var guests = document.querySelector('#capacity');
+var guests = mainForm.querySelector('#capacity');
+guests.addEventListener('change', function (evt) {
   var guestsNumber = guests.querySelector('option:checked').value;
-  var rooms = document.querySelector('#room_number');
+  var rooms = mainForm.querySelector('#room_number');
   var roomsNumber = rooms.querySelector('option:checked').value;
   if (guestsNumber > roomsNumber) {
     guests.setCustomValidity('Слишком много гостей');
-    evt.preventDefault();
   } else {
     guests.setCustomValidity('');
   }
-  evt.target.checkValidity(); // returns false but im not sure what to do with it.
+  guests.reportValidity(); // returns false but im not sure what to do with it.
 });
+
+mainForm.addEventListener('submit', function (evt) {
+  evt.preventDefault();
+});
+
+// mainForm.addEventListener('submit', function (evt) {
+//   var guests = mainForm.querySelector('#capacity');
+//   var guestsNumber = guests.querySelector('option:checked').value;
+//   var rooms = mainForm.querySelector('#room_number');
+//   var roomsNumber = rooms.querySelector('option:checked').value;
+//   if (guestsNumber > roomsNumber) {
+//     guests.setCustomValidity('Слишком много гостей');
+//     evt.preventDefault();
+//   } else {
+//     guests.setCustomValidity('');
+//   }
+//   guests.checkValidity(); // returns false but im not sure what to do with it.
+// });
 
