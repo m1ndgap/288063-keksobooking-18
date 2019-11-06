@@ -183,7 +183,7 @@ var generateRealEstateDom = function (realEstate, template) {
  * @param {string} type of realEstate object
  * @return {string} transType - proper string that would be returned to dom
  */
-var idREType = function (type) {
+var chooseType = function (type) {
   switch (type) {
     case 'flat':
       return 'Квартира';
@@ -203,7 +203,7 @@ var idREType = function (type) {
  * @param {array} array of real estate features from the object
  * @return {element} fragment filled with generated 'feature' elements
  */
-var idREFeatures = function (array) {
+var chooseFeatures = function (array) {
   var fragment = document.createDocumentFragment();
   for (var i = 0; i < array.length; i++) {
     var li = document.createElement('li');
@@ -219,7 +219,7 @@ var idREFeatures = function (array) {
  * @param {element} imgEl image container element from the template
  * @return {element} fragment filled with generated 'photo' elements
  */
-var idREImages = function (array, imgEl) {
+var chooseImages = function (array, imgEl) {
   var fragment = document.createDocumentFragment();
   // carried over img element so I dont have to generate it from scratch with all the attributes and all. this way it is more flexible.
   for (var i = 0; i < array.length; i++) {
@@ -230,27 +230,26 @@ var idREImages = function (array, imgEl) {
   return fragment;
 };
 
-var generateCardDom = function (realEstate, template) {
+var generateCardDom = function (realEstateObj, template) {
   var element = template.cloneNode(true);
-  var realEstateObj = realEstate[0];
   var type = realEstateObj.offer.type;
   element.querySelector('.popup__title').innerText = realEstateObj.offer.title;
   element.querySelector('.popup__text--address').innerText = realEstateObj.offer.address;
   element.querySelector('.popup__text--price').innerText = realEstateObj.offer.price + '₽/ночь';
-  element.querySelector('.popup__type').innerText = idREType(type);
+  element.querySelector('.popup__type').innerText = chooseType(type);
   element.querySelector('.popup__text--capacity').innerText = realEstateObj.offer.rooms + ' комнаты для ' + realEstateObj.offer.guests + ' гостей';
   element.querySelector('.popup__text--time').innerText = 'Заезд после ' + realEstateObj.offer.checkin + ', выезд до ' + realEstateObj.offer.checkout;
   element.querySelector('.popup__description').innerText = realEstateObj.offer.description;
   element.querySelector('.popup__avatar').setAttribute('src', realEstateObj.author.avatar);
   // generating features elements in a separate function
-  var features = idREFeatures(realEstateObj.offer.features);
+  var features = chooseFeatures(realEstateObj.offer.features);
   var featuresEl = element.querySelector('.popup__features');
   // cleaning out template values
   featuresEl.innerHTML = '';
   featuresEl.appendChild(features);
   // generating img elements in a separate function
   var photosEl = element.querySelector('.popup__photos');
-  var photos = idREImages(realEstateObj.offer.photos, photosEl);
+  var photos = chooseImages(realEstateObj.offer.photos, photosEl);
   // cleaning out template values
   photosEl.innerHTML = '';
   photosEl.appendChild(photos);
@@ -269,34 +268,29 @@ checkPins(map);
 
 
 // assigning event listeners
+var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
+var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
+var mapPins = document.querySelector('.map__pins');
+var mapFilters = document.querySelector('.map__filters-container');
+var realEstate = generateRealEstate();
+var mapPinContent = generateRealEstateDom(realEstate, pinTemplt);
+
 mainPin.addEventListener('mousedown', function () {
   enablePage(mainForm, map);
   if (checkPins(map)) {
-    var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
-    var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
-    var mapPins = document.querySelector('.map__pins');
-    var mapFilters = document.querySelector('.map__filters-container');
-    var realEstate = generateRealEstate();
-    var mapPinContent = generateRealEstateDom(realEstate, pinTemplt);
     mapPins.appendChild(mapPinContent);
-    map.insertBefore(generateCardDom(realEstate, cardTemplt), mapFilters);
+    map.insertBefore(generateCardDom(realEstate[0], cardTemplt), mapFilters);
   }
 });
-mainPin.addEventListener('mouseup', function () {
-  fillAddress(mainPin);
-});
+// mainPin.addEventListener('mouseup', function () {
+//   fillAddress(mainPin);
+// });
 mainPin.addEventListener('keydown', function (evt) {
   if (evt.keyCode === ENTERKEY) {
     enablePage(mainForm, map);
     if (checkPins(map)) {
-      var pinTemplt = document.querySelector('#pin').content.querySelector('.map__pin');
-      var cardTemplt = document.querySelector('#card').content.querySelector('.map__card');
-      var mapPins = document.querySelector('.map__pins');
-      var mapFilters = document.querySelector('.map__filters-container');
-      var realEstate = generateRealEstate();
-      var mapPinContent = generateRealEstateDom(realEstate, pinTemplt);
       mapPins.appendChild(mapPinContent);
-      map.insertBefore(generateCardDom(realEstate, cardTemplt), mapFilters);
+      map.insertBefore(generateCardDom(realEstate[0], cardTemplt), mapFilters);
     }
     fillAddress(mainPin);
   }
@@ -307,33 +301,32 @@ resetEl.addEventListener('click', function () {
 });
 
 var guests = mainForm.querySelector('#capacity');
+var rooms = mainForm.querySelector('#room_number');
 guests.addEventListener('change', function () {
-  var guestsNumber = guests.querySelector('option:checked').value;
-  var rooms = mainForm.querySelector('#room_number');
-  var roomsNumber = rooms.querySelector('option:checked').value;
-  if (guestsNumber > roomsNumber) {
-    guests.setCustomValidity('Слишком много гостей');
-  } else {
-    guests.setCustomValidity('');
+  var guestsNumber = parseInt(guests.querySelector('option:checked').value, 10);
+  var roomsNumber = parseInt(rooms.querySelector('option:checked').value, 10);
+  switch (roomsNumber) {
+    case 100:
+      if (guestsNumber > 0) {
+        guests.setCustomValidity('Не для гостей');
+      } else {
+        guests.setCustomValidity('');
+      }
+      break;
+    default:
+      if (guestsNumber > roomsNumber) {
+        guests.setCustomValidity('Слишком много гостей');
+      } else if (guestsNumber === 0) {
+        guests.setCustomValidity('Укажите количество гостей');
+      } else {
+        guests.setCustomValidity('');
+      }
   }
-  guests.reportValidity(); // returns false but im not sure what to do with it.
+  guests.reportValidity();
 });
 
 mainForm.addEventListener('submit', function (evt) {
-  evt.preventDefault();
+  if (!mainForm.checkValidity()) {
+    evt.preventDefault();
+  }
 });
-
-// mainForm.addEventListener('submit', function (evt) {
-//   var guests = mainForm.querySelector('#capacity');
-//   var guestsNumber = guests.querySelector('option:checked').value;
-//   var rooms = mainForm.querySelector('#room_number');
-//   var roomsNumber = rooms.querySelector('option:checked').value;
-//   if (guestsNumber > roomsNumber) {
-//     guests.setCustomValidity('Слишком много гостей');
-//     evt.preventDefault();
-//   } else {
-//     guests.setCustomValidity('');
-//   }
-//   guests.checkValidity(); // returns false but im not sure what to do with it.
-// });
-
