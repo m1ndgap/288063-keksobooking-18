@@ -31,6 +31,28 @@ var POPUPCLASS = 'map__card';
 
 
 // declaring functions
+var roomAndGuestValidity = function (rooms, guests, roomsEl, guestsEl) {
+  switch (rooms) {
+    case 100:
+      if (guests > 0) {
+        guestsEl.setCustomValidity('Не для гостей');
+      } else {
+        guestsEl.setCustomValidity('');
+      }
+      break;
+    default:
+      console.log(guests, rooms);
+      if (guests > rooms) {
+        guestsEl.setCustomValidity('Слишком много гостей');
+      } else if (guests === 0) {
+        guestsEl.setCustomValidity('Укажите количество гостей');
+      } else {
+        guestsEl.setCustomValidity('');
+      }
+  }
+};
+
+
 /**
  * checking if map is already populated
  * @param {element} map containing elements
@@ -305,27 +327,22 @@ var rooms = mainForm.querySelector('#room_number');
 guests.addEventListener('change', function () {
   var guestsNumber = parseInt(guests.querySelector('option:checked').value, 10);
   var roomsNumber = parseInt(rooms.querySelector('option:checked').value, 10);
-  switch (roomsNumber) {
-    case 100:
-      if (guestsNumber > 0) {
-        guests.setCustomValidity('Не для гостей');
-      } else {
-        guests.setCustomValidity('');
-      }
-      break;
-    default:
-      if (guestsNumber > roomsNumber) {
-        guests.setCustomValidity('Слишком много гостей');
-      } else if (guestsNumber === 0) {
-        guests.setCustomValidity('Укажите количество гостей');
-      } else {
-        guests.setCustomValidity('');
-      }
-  }
+  roomAndGuestValidity(roomsNumber, guestsNumber, rooms, guests);
+  guests.reportValidity();
+});
+
+rooms.addEventListener('change', function () {
+  var guestsNumber = parseInt(guests.querySelector('option:checked').value, 10);
+  var roomsNumber = parseInt(rooms.querySelector('option:checked').value, 10);
+  roomAndGuestValidity(roomsNumber, guestsNumber, rooms, guests);
   guests.reportValidity();
 });
 
 mainForm.addEventListener('submit', function (evt) {
+  var guestsNumber = parseInt(guests.querySelector('option:checked').value, 10);
+  var roomsNumber = parseInt(rooms.querySelector('option:checked').value, 10);
+  roomAndGuestValidity(roomsNumber, guestsNumber, rooms, guests);
+  mainForm.reportValidity();
   if (!mainForm.checkValidity()) {
     evt.preventDefault();
   }
