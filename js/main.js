@@ -41,7 +41,6 @@ var roomAndGuestValidity = function (rooms, guests, roomsEl, guestsEl) {
       }
       break;
     default:
-      console.log(guests, rooms);
       if (guests > rooms) {
         guestsEl.setCustomValidity('Слишком много гостей');
       } else if (guests === 0) {
