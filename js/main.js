@@ -52,15 +52,15 @@ var roomAndGuestValidity = function (rooms, guests, roomsEl, guestsEl) {
 };
 
 
-/**
- * checking if map is already populated
- * @param {element} map containing elements
- * @return {boolean} true if map has no address pins (main pin is ignored)
- */
-var checkPins = function (map) {
-  var pins = map.querySelectorAll('.' + PINCLASS).length;
-  return !(pins > 1);
-};
+// /**
+//  * checking if map is already populated
+//  * @param {element} map containing elements
+//  * @return {boolean} true if map has no address pins (main pin is ignored)
+//  */
+// var checkPins = function (map) {
+//   var pins = map.querySelectorAll('.' + PINCLASS).length;
+//   return !(pins > 1);
+// };
 
 var destroyMapElements = function (map) {
   var pins = map.querySelectorAll('.' + PINCLASS);
@@ -285,7 +285,6 @@ var map = document.querySelector('.map');
 var resetEl = document.querySelector('.ad-form__reset');
 disablePage(mainForm, map);
 fillAddress(mainPin);
-checkPins(map);
 
 
 // assigning event listeners
@@ -296,24 +295,22 @@ var mapFilters = document.querySelector('.map__filters-container');
 var realEstate = generateRealEstate();
 var mapPinContent = generateRealEstateDom(realEstate, pinTemplt);
 
-mainPin.addEventListener('mousedown', function () {
+mainPin.addEventListener('mousedown', function populateDom() {
   enablePage(mainForm, map);
-  if (checkPins(map)) {
-    mapPins.appendChild(mapPinContent);
-    map.insertBefore(generateCardDom(realEstate[0], cardTemplt), mapFilters);
-  }
+  mapPins.appendChild(mapPinContent);
+  map.insertBefore(generateCardDom(realEstate[0], cardTemplt), mapFilters);
+  mainPin.removeEventListener('mousedown', populateDom);
 });
 // mainPin.addEventListener('mouseup', function () {
 //   fillAddress(mainPin);
 // });
-mainPin.addEventListener('keydown', function (evt) {
+mainPin.addEventListener('keydown', function populateDomKey(evt) {
   if (evt.keyCode === ENTERKEY) {
     enablePage(mainForm, map);
-    if (checkPins(map)) {
-      mapPins.appendChild(mapPinContent);
-      map.insertBefore(generateCardDom(realEstate[0], cardTemplt), mapFilters);
-    }
+    mapPins.appendChild(mapPinContent);
+    map.insertBefore(generateCardDom(realEstate[0], cardTemplt), mapFilters);
     fillAddress(mainPin);
+    mainPin.removeEventListener('keydown', populateDomKey);
   }
 });
 resetEl.addEventListener('click', function () {
